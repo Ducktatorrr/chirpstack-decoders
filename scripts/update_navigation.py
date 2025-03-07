@@ -11,7 +11,7 @@ IGNORE_DIRS = {".git", ".github"}
 def get_navigation():
     """Generate markdown for device navigation based on folder structure."""
     lines = []
-    lines.append("## Supported Device Brands & Devices\n")
+    lines.append("## Documented Device Brands & Devices\n")
     for brand in sorted(os.listdir(REPO_ROOT)):
         brand_path = os.path.join(REPO_ROOT, brand)
         if os.path.isdir(brand_path) and brand not in IGNORE_DIRS:
