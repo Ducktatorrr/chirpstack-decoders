@@ -5,7 +5,7 @@ Slightly modified decoders for Chirpstack V4.
 **ATTENTION:** These can be modified decoders in the sense that they output different variable names than the original decoders! All changes made for each device are listed in their respective READMEs.
 
 <!-- AUTOGEN START -->
-## Supported Device Brands & Devices
+## Documented Device Brands & Devices
 
 ### digital-matter
 - **[g62](digital-matter/g62/README.md)**
