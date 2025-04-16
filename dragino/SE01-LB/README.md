@@ -1,3 +1,3 @@
 # Dragino LSE01
 
-Straight from their repo since Dragino actually keeps up writing decoders for new Chirpstack versions.
+For the datalog uplink the soil EC has been unmasked as it otherwise seemed to cut off the last digit on of it's value.
