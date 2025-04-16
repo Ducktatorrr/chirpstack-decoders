@@ -28,9 +28,11 @@ function datalog(i, bytes) {
 	var cc = parseFloat(
 		((((bytes[2 + i] << 24) >> 16) | bytes[3 + i]) / 100).toFixed(2)
 	);
-	var dd = parseFloat(
-		((((bytes[4 + i] << 8) | bytes[5 + i]) & 0xfff) / 10).toFixed(1)
-	);
+	// Commented out original code from Dragino that incorrectly cut off the last digit of the soil moisture value
+	// var dd = parseFloat(
+	// 	((((bytes[4 + i] << 8) | bytes[5 + i]) & 0xfff) / 10).toFixed(1)
+	// );
+	var dd = parseFloat(((bytes[4 + i] << 8) | bytes[5 + i]).toFixed(1));
 
 	var ee = getMyDate(
 		(
