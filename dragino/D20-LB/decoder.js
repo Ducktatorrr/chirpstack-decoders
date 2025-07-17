@@ -35,6 +35,38 @@ function getNodeType(bytes) {
 	}
 }
 
+function getNodeTypeFromDatalog(bytes) {
+	var validProbes = 0;
+	
+	// For datalog messages, check the first record (first 11 bytes)
+	// Check TempC1 (bytes[0] and bytes[1])
+	if(!((bytes[0]==0x7f)&&(bytes[1]==0xff))) {
+		validProbes++;
+	}
+	
+	// Check TempC2 (bytes[2] and bytes[3])  
+	if(!((bytes[2]==0x7f)&&(bytes[3]==0xff))) {
+		validProbes++;
+	}
+	
+	// Check TempC3 (bytes[4] and bytes[5])
+	if(!((bytes[4]==0x7f)&&(bytes[5]==0xff))) {
+		validProbes++;
+	}
+	
+	// Return node type based on number of valid probes
+	if(validProbes === 1) {
+		return "D20-LB";
+	} else if(validProbes === 2) {
+		return "D22-LB";
+	} else if(validProbes === 3) {
+		return "D23-LB";
+	} else {
+		// Default to D20-LB if no valid probes detected
+		return "D20-LB";
+	}
+}
+
 
 function datalog(i,bytes){
 var aa= parseFloat(((bytes[0+i]<<24>>16 | bytes[1+i])/10).toFixed(1));
@@ -127,7 +159,7 @@ for(var i=0;i<bytes.length;i=i+11)
 	data_sum+=data;
 }
 return{
-Node_type:getNodeType(bytes),
+Node_type:getNodeTypeFromDatalog(bytes),
 DATALOG:data_sum,
 PNACKMD:pnack,
 };    
