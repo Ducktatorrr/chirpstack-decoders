@@ -13,6 +13,7 @@ Slightly modified decoders for Chirpstack V4.
 - **[yabby3](digital-matter/yabby3/README.md)**
 
 ### dragino
+- **[D20-LB](dragino/D20-LB/README.md)**
 - **[LDS03A](dragino/LDS03A/README.md)**
 - **[LHT65N](dragino/LHT65N/README.md)**
 - **[LSE01](dragino/LSE01/README.md)**
