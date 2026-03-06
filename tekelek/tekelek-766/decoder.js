@@ -35,7 +35,8 @@ function Decoder(bytes, port) {
 		let firmware = bytes[4].toString() + "." + bytes[5].toString();
 		let reasonBytes = bytes[6];
 		let contactReason = reasonBytes & 0x3;
-		var contactReasonMsg = "";
+		let contactReasonMsg = "";
+
 		switch (contactReason) {
 			case 0:
 				contactReasonMsg = "Reset";
@@ -50,8 +51,10 @@ function Decoder(bytes, port) {
 				contactReasonMsg = "Activation";
 				break;
 		}
+
 		let lastReset = (reasonBytes >> 2) & 0x7;
-		var lastResetMsg = "";
+		let lastResetMsg = "";
+
 		switch (lastReset) {
 			case 0:
 				lastResetMsg = "Power on";
@@ -78,6 +81,7 @@ function Decoder(bytes, port) {
 				lastResetMsg = "Backup mode";
 				break;
 		}
+
 		let activeStatus = (reasonBytes >> 5) & 0x1;
 		let battery = bytes[10];
 		let txPeriod = bytes[13];
@@ -94,6 +98,116 @@ function Decoder(bytes, port) {
 			txPeriod_h: txPeriod,
 			sensorRSSI_dBm: sensorRSSI,
 			hw_id: hardware,
+		};
+	} else if (port === 67 || bytes[0] === 0x43) {
+		const msgType = bytes[0];
+		const productId = bytes[1];
+		const reserved = bytes[2];
+
+		function u32le(i) {
+			return (
+				(bytes[i] |
+					(bytes[i + 1] << 8) |
+					(bytes[i + 2] << 16) |
+					(bytes[i + 3] << 24)) >>> 0
+			);
+		}
+
+		function u16le(i) {
+			return (bytes[i] | (bytes[i + 1] << 8)) >>> 0;
+		}
+
+		let i = 3;
+		let params = {};
+		let rawParams = [];
+
+		while (i < bytes.length) {
+			if (i + 3 > bytes.length) {
+				break;
+			}
+
+			const len = bytes[i];
+			const id = (bytes[i + 1] << 8) | bytes[i + 2];
+			const vStart = i + 3;
+			const vEnd = vStart + len;
+
+			if (vEnd > bytes.length) {
+				rawParams.push({
+					error: "truncated",
+					at: i,
+					len: len,
+					id: id,
+				});
+				break;
+			}
+
+			rawParams.push({
+				id_hex: "0x" + id.toString(16).padStart(4, "0"),
+				len: len,
+			});
+
+			if (id === 0x0500 && len === 4) {
+				const seconds = u32le(vStart);
+				params.tx_period_s = seconds;
+				params.tx_period_h = seconds / 3600;
+			} else if (id === 0x0502 && len === 4) {
+				const seconds = u32le(vStart);
+				params.tx_random_s = seconds;
+				params.tx_random_min = seconds / 60;
+			} else if (id === 0x0503 && len === 4) {
+				const seconds = u32le(vStart);
+				params.logger_interval_s = seconds;
+				params.logger_interval_min = seconds / 60;
+			} else if (id === 0x0505 && len === 4) {
+				const seconds = u32le(vStart);
+				params.status_period_s = seconds;
+				params.status_period_days = seconds / 86400;
+			} else if (id === 0x4005 && len === 1) {
+				params.ping_rate_min = bytes[vStart];
+			} else if (id === 0x4006 && len === 1) {
+				let v = bytes[vStart] & 0xff;
+				params.rf_rssi_threshold_dbm = v > 127 ? v - 256 : v;
+			} else if ((id === 0x4001 || id === 0x4002 || id === 0x4003) && len === 2) {
+				const u16 = u16le(vStart);
+				const threshold = u16 & 0x03ff;
+				const tolerance = (u16 >> 10) & 0x0f;
+				const enabled = ((u16 >> 14) & 0x01) === 1;
+				const polarityHigher = ((u16 >> 15) & 0x01) === 1;
+
+				const key =
+					id === 0x4001 ? "limit1" : id === 0x4002 ? "limit2" : "limit3";
+
+				params[key] = {
+					threshold_cm: threshold,
+					tolerance_cm: tolerance,
+					enabled: enabled,
+					polarity: polarityHigher
+						? "higher_than_threshold"
+						: "lower_than_threshold",
+				};
+			} else {
+				let hex = "";
+				for (let j = vStart; j < vEnd; j++) {
+					hex += bytes[j].toString(16).padStart(2, "0");
+				}
+				params["param_" + id.toString(16).padStart(4, "0")] = hex;
+			}
+
+			i = vEnd;
+		}
+
+		decoded = {
+			msgType: "0x" + msgType.toString(16),
+			productId: "0x" + productId.toString(16),
+			reserved: "0x" + reserved.toString(16),
+			...params,
+			_raw_param_list: rawParams,
+		};
+	}
+
+	if (Object.keys(decoded).length === 0) {
+		decoded = {
+			raw: bytes,
 		};
 	}
 
